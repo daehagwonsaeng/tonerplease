@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>토너를 부탁해 - 재생 토너·잉크 전문 상담</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f0f4f8; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    #app {
+      display: flex; flex-direction: column;
+      width: 100%; max-width: 500px; height: 720px;
+      background: #fff; border-radius: 18px; overflow: hidden;
+      box-shadow: 0 8px 40px rgba(4,44,83,0.15);
+    }
+    #hdr {
+      background: linear-gradient(135deg, #042C53 0%, #0C447C 100%);
+      padding: 15px 18px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    #hdr-icon {
+      width: 40px; height: 40px; background: rgba(255,255,255,0.15);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    }
+    #hdr-icon svg { width: 22px; height: 22px; }
+    #hdr-info { flex: 1; }
+    #hdr-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+    #hdr-sub { font-size: 11px; color: #85B7EB; margin-top: 2px; }
+    #hdr-badge {
+      font-size: 11px; background: rgba(255,255,255,0.15); color: #E6F1FB;
+      padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.25);
+    }
+    #tabs { display: flex; border-bottom: 1px solid #e8edf2; background: #f7f9fc; flex-shrink: 0; }
+    .tab {
+      flex: 1; padding: 10px 4px; font-size: 12px; text-align: center;
+      cursor: pointer; color: #7a8a9a; border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; background: #fff; }
+    .tab:hover:not(.active) { background: #fff; color: #333; }
+    .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .panel.active { display: flex; }
+    #messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 4px; }
+    .msg { display: flex; gap: 8px; }
+    .msg.user { flex-direction: row-reverse; }
+    .bubble { max-width: 82%; font-size: 13.5px; line-height: 1.75; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; }
+    .msg.bot .bubble { background: #f3f6fa; color: #1a2a3a; border-radius: 4px 14px 14px 14px; border: 1px solid #e2eaf2; }
+    .msg.user .bubble { background: #042C53; color: #B5D4F4; border-radius: 14px 4px 14px 14px; }
+    .contact-card { margin-top: 10px; background: #EBF4FF; border: 1px solid #378ADD; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #042C53; line-height: 2; }
+    .contact-card strong { font-weight: 600; }
+    .contact-card a { color: #185FA5; font-weight: 600; text-decoration: none; }
+    .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; margin-top: 3px; }
+    .bot-av { background: #0C447C; color: #85B7EB; }
+    .user-av { background: #042C53; color: #85B7EB; }
+    #typing { display: none; gap: 8px; }
+    .dot { width: 6px; height: 6px; background: #aab; border-radius: 50%; animation: blink 1.2s infinite; display: inline-block; margin: 0 1px; }
+    .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+    @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+    #chips { padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid #e8edf2; background: #fff; flex-shrink: 0; }
+    .chip { font-size: 12px; padding: 5px 11px; border: 1px solid #d0dce8; border-radius: 20px; cursor: pointer; color: #5a6a7a; background: #f7f9fc; transition: all .15s; white-space: nowrap; }
+    .chip:hover { background: #EBF4FF; color: #185FA5; border-color: #185FA5; }
+    #inp-area { padding: 10px 16px; border-top: 1px solid #e8edf2; display: flex; gap: 8px; align-items: flex-end; background: #fff; flex-shrink: 0; }
+    #user-input { flex: 1; resize: none; font-family: inherit; font-size: 13.5px; padding: 9px 12px; border: 1px solid #d0dce8; border-radius: 10px; background: #f7f9fc; color: #1a2a3a; outline: none; line-height: 1.5; max-height: 90px; overflow-y: auto; }
+    #user-input:focus { border-color: #378ADD; background: #fff; }
+    #send-btn { width: 36px; height: 36px; border-radius: 10px; background: #042C53; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s; }
+    #send-btn:hover { background: #0C447C; }
+    #send-btn:disabled { background: #c5d0dc; cursor: not-allowed; }
+    #send-btn svg { width: 15px; height: 15px; }
+    .scroll-panel { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .info-card { background: #fff; border: 1px solid #e2eaf2; border-radius: 12px; padding: 13px 15px; }
+    .card-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #1a2a3a; }
+    .brand-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+    .badge-samsung { background: #E6F1FB; color: #185FA5; }
+    .badge-hp { background: #FFF3E0; color: #a05000; }
+    .badge-canon { background: #FDECEA; color: #b02020; }
+    .badge-brother { background: #F0F9EC; color: #2a6020; }
+    .badge-fuji { background: #F3EEFF; color: #5a30b5; }
+    .badge-sindoh { background: #FFF8ED; color: #7a4a00; }
+    .toner-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid #f0f4f8; font-size: 12.5px; }
+    .toner-row:last-child { border-bottom: none; }
+    .toner-model { color: #1a2a3a; font-weight: 500; }
+    .toner-name { color: #185FA5; font-size: 11.5px; text-align: right; }
+    .err-item { background: #fff; border: 1px solid #e2eaf2; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color .15s; }
+    .err-item:hover { border-color: #378ADD; }
+    .err-top { display: flex; align-items: center; gap: 8px; }
+    .err-code { font-size: 11.5px; font-weight: 600; color: #185FA5; background: #EBF4FF; padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+    .err-name { font-size: 13px; color: #1a2a3a; }
+    .err-sev { font-size: 11px; margin-left: auto; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .sev-high { background: #FDECEA; color: #b02020; }
+    .sev-mid { background: #FFF3E0; color: #a05000; }
+    .err-desc { font-size: 12.5px; color: #5a6a7a; margin-top: 8px; display: none; line-height: 1.7; }
+    .err-item.open .err-desc { display: block; }
+    .btn-cta { width: 100%; padding: 10px; font-size: 13px; font-family: inherit; background: #042C53; color: #B5D4F4; border: none; border-radius: 10px; cursor: pointer; transition: background .15s; }
+    .btn-cta:hover { background: #0C447C; }
+    #footer { text-align: center; padding: 8px; font-size: 11px; color: #aab; background: #f7f9fc; border-top: 1px solid #e8edf2; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="hdr">
+    <div id="hdr-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+    </div>
+    <div id="hdr-info">
+      <div id="hdr-title">토너를 부탁해</div>
+      <div id="hdr-sub">재생 토너·잉크 전문 상담 챗봇</div>
+    </div>
+    <div id="hdr-badge">AI 상담</div>
+  </div>
+
+  <div id="tabs">
+    <div class="tab active" onclick="switchTab('chat')">💬 AI 상담</div>
+    <div class="tab" onclick="switchTab('db')">🖨️ 호환 토너</div>
+    <div class="tab" onclick="switchTab('err')">⚠️ 오류 안내</div>
+  </div>
+
+  <div id="panel-chat" class="panel active">
+    <div id="chips">
+      <div class="chip" onclick="sendChip('토너 인식이 안 돼요')">인식 안됨</div>
+      <div class="chip" onclick="sendChip('인쇄물이 흐리게 나와요')">흐린 인쇄</div>
+      <div class="chip" onclick="sendChip('이미징유닛 오류가 떠요')">이미징유닛</div>
+      <div class="chip" onclick="sendChip('전사벨트 오류가 있어요')">전사벨트</div>
+      <div class="chip" onclick="sendChip('제 프린터에 맞는 재생토너가 뭔가요?')">호환 토너 확인</div>
+    </div>
+    <div id="messages">
+      <div class="msg bot">
+        <div class="av bot-av">AI</div>
+        <div class="bubble">안녕하세요! 재생 토너·잉크 전문 쇼핑몰 <strong>토너를 부탁해</strong>입니다 🖨️
+
+정확한 안내를 위해 아래 두 가지를 알려주세요!
+
+1. 프린터 모델명이 어떻게 되나요?
+   (예: 삼성 SL-M2030, HP M1132, 캐논 LBP6030 등)
+
+2. 어떤 문제가 발생하고 있나요?
+   (예: 토너 인식 안됨, 인쇄 흐림, 이미징유닛 오류 등)
+
+⚠️ 저희는 재생 토너·잉크 판매 전문점으로, 프린터 부품 교체나 A/S는 제공하지 않습니다.</div>
+      </div>
+    </div>
+    <div id="typing" class="msg bot">
+      <div class="av bot-av">AI</div>
+      <div class="bubble"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div id="inp-area">
+      <textarea id="user-input" placeholder="프린터 모델명과 증상을 알려주세요..." rows="1"></textarea>
+      <button id="send-btn" onclick="handleSend()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="panel-db" class="panel">
+    <div class="scroll-panel">
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-samsung">삼성 흑백</span><span class="card-title">Samsung 흑백 레이저</span></div>
+        <div class="toner-row"><span class="toner-model">SL-M2020/M2022/M2024/M2070~M2079</span><span class="toner-name">MLT-D111S</span></div>
+        <div class="toner-row"><span class="toner-model">SL-M2030/M2033/M2035/M2080~M2085</span><span class="toner-name">MLT-K200S/L</span></div>
+        <div class="toner-row"><span class="toner-model">SL-M2620/M2820/M2670/M2830/M2870/M2880</span><span class="toner-name">MLT-D115L</span></div>
+        <div class="toner-row"><span class="toner-model">SL-M2630/M2840/M2893</span><span class="toner-name">MLT-K250S/L</span></div>
+        <div class="toner-row"><span class="toner-model">SL-M3320/M3820/M3870/M4020/M4070/M4080</span><span class="toner-name">MLT-D203S/L/E</span></div>
+        <div class="toner-row"><span class="toner-model">ML-2160/ML-2165/SCX-3400/SCX-3405</span><span class="toner-name">MLT-D101S</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-samsung">삼성 컬러</span><span class="card-title">Samsung 컬러 레이저</span></div>
+        <div class="toner-row"><span class="toner-model">SL-C430/C432/C433/C480/C483/C485/C486</span><span class="toner-name">CLT-K403S (4색)</span></div>
+        <div class="toner-row"><span class="toner-model">SL-C510/C513/C515/C563/C565</span><span class="toner-name">CLT-K515S (4색)</span></div>
+        <div class="toner-row"><span class="toner-model">CLP-360/CLP-365/CLX-3300/SL-C410/C460</span><span class="toner-name">CLT-K406S (4색)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-hp">HP 흑백</span><span class="card-title">HP LaserJet 흑백</span></div>
+        <div class="toner-row"><span class="toner-model">P1102/P1102W/M1132/M1210/M1212/M1217</span><span class="toner-name">CE285A (85A)</span></div>
+        <div class="toner-row"><span class="toner-model">M12a/M12w/M26a/M26nw</span><span class="toner-name">CF279A (79A)</span></div>
+        <div class="toner-row"><span class="toner-model">M102a/M102w/M130a/M130fw/M130nw</span><span class="toner-name">CF217A (17A)</span></div>
+        <div class="toner-row"><span class="toner-model">M203/M227/M230</span><span class="toner-name">CF230A/X (30A/30X)</span></div>
+        <div class="toner-row"><span class="toner-model">M404/M428</span><span class="toner-name">CF258A/X (58A/58X)</span></div>
+        <div class="toner-row"><span class="toner-model">107a/107w/135a/135w/137fnw</span><span class="toner-name">W1106A (106A)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-hp">HP 컬러</span><span class="card-title">HP Color LaserJet</span></div>
+        <div class="toner-row"><span class="toner-model">M252/M274/M277</span><span class="toner-name">CF400A (201A, 4색)</span></div>
+        <div class="toner-row"><span class="toner-model">M254/M280/M281</span><span class="toner-name">CF540A (203A, 4색)</span></div>
+        <div class="toner-row"><span class="toner-model">M454/M479</span><span class="toner-name">W2010A (415A, 4색)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-canon">캐논 흑백</span><span class="card-title">Canon 흑백 레이저</span></div>
+        <div class="toner-row"><span class="toner-model">LBP6030/LBP6033/MF3010</span><span class="toner-name">CRG-325/326/328</span></div>
+        <div class="toner-row"><span class="toner-model">LBP151dw/MF264dw/MF267dw/MF269dw</span><span class="toner-name">CRG-051/051H</span></div>
+        <div class="toner-row"><span class="toner-model">LBP223dw/LBP226dw/MF441dw~MF446x</span><span class="toner-name">CRG-057/057H</span></div>
+        <div class="toner-row"><span class="toner-model">MF215/MF217w~MF249dw</span><span class="toner-name">CRG-337/337H</span></div>
+        <div class="toner-row"><span class="toner-model">MF5880/MF5980/MF6180</span><span class="toner-name">CRG-719/719H</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-canon">캐논 컬러</span><span class="card-title">Canon 컬러 레이저</span></div>
+        <div class="toner-row"><span class="toner-model">LBP611Cn/LBP612Cdw/MF632Cdw/MF634Cdw</span><span class="toner-name">CRG-045 (4색)</span></div>
+        <div class="toner-row"><span class="toner-model">LBP621Cw/LBP623Cdw/MF641Cw~MF645Cx</span><span class="toner-name">CRG-054 (4색)</span></div>
+        <div class="toner-row"><span class="toner-model">LBP664Cx/LBP663Cdw/MF742Cdw~MF746Cx</span><span class="toner-name">CRG-069 (4색)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-brother">브라더</span><span class="card-title">Brother 레이저</span></div>
+        <div class="toner-row"><span class="toner-model">HL-1110/HL-1112/DCP-1510/MFC-1810</span><span class="toner-name">TN-1000 (IU: DR-1000)</span></div>
+        <div class="toner-row"><span class="toner-model">HL-L2300D/L2340DW/MFC-L2700DW</span><span class="toner-name">TN-2360/TN-2380</span></div>
+        <div class="toner-row"><span class="toner-model">HL-L2350DW/L2370DW/MFC-L2710DW</span><span class="toner-name">TN-2480/TN-2460</span></div>
+        <div class="toner-row"><span class="toner-model">HL-L5100DN/L5200DW/MFC-L5700DN</span><span class="toner-name">TN-3498/TN-3458</span></div>
+        <div class="toner-row"><span class="toner-model">HL-L8260CDW/MFC-L8690CDW/L8900CDW</span><span class="toner-name">TN-459 (4색 대용량)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span class="brand-badge badge-sindoh">신도리코</span><span class="card-title">신도리코 / 후지제록스</span></div>
+        <div class="toner-row"><span class="toner-model">N410/N411</span><span class="toner-name">N410T20K</span></div>
+        <div class="toner-row"><span class="toner-model">D310/D312/D313</span><span class="toner-name">D310T8K</span></div>
+        <div class="toner-row"><span class="toner-model">DocuPrint P215b/M215b/M215fw</span><span class="toner-name">CT201610</span></div>
+        <div class="toner-row"><span class="toner-model">DocuPrint M225dw/M265z</span><span class="toner-name">CT202330</span></div>
+      </div>
+      <button class="btn-cta" onclick="sendChip('제 프린터에 맞는 재생토너가 뭔가요?'); switchTab('chat')">내 프린터 호환 토너 AI에게 확인하기 ↗</button>
+    </div>
+  </div>
+
+  <div id="panel-err" class="panel">
+    <div class="scroll-panel">
+      <div style="font-size:12px;color:#8a9aaa;padding-bottom:4px">항목을 눌러 해결 방법을 확인하세요</div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">토너 칩</span><span class="err-name">재생 토너 미인식</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">1. 토너를 꺼내 칩 금속 단자를 마른 천으로 닦아주세요<br>2. 프린터 전원을 껐다 다시 켜세요<br>3. 해결 안 될 경우 토너 교체 필요 → 010-3292-7896 문의<br>⚠️ 프린터 내부 하드웨어 문제 시 제조사 A/S센터 이용</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">이미징유닛</span><span class="err-name">이미징유닛 오류·교체 알림</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">1. 유닛 탈착 시 빛에 노출되지 않도록 주의하세요<br>2. 재장착 후 전원 재시작 및 카운터 리셋<br>3. 수명 초과 시 이미징유닛 교체 필요 → 010-3292-7896 문의<br>⚠️ 직접 분해 수리는 불가, 제조사 A/S 이용</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">흐린 인쇄</span><span class="err-name">인쇄물 흐림·농도 저하</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">1. 토너를 꺼내 가볍게 좌우로 흔든 후 재장착하세요<br>2. 프린터 설정에서 인쇄 농도를 높여보세요<br>3. 개선 없으면 토너 교체 필요 → 010-3292-7896 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">줄무늬·얼룩</span><span class="err-name">세로 줄무늬 / 반복 얼룩</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">1. 토너를 꺼내 현상롤러 표면을 마른 천으로 닦아주세요<br>2. 드럼 표면은 절대 손으로 만지지 마세요<br>3. 반복 발생 시 토너 교체 → 010-3292-7896 문의<br>⚠️ 드럼 교체 등 하드웨어 수리는 제조사 A/S센터</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">번짐·묻음</span><span class="err-name">인쇄물 번짐·손에 묻음</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">1. 프린터 설정에서 용지 종류를 올바르게 설정하세요<br>2. 토너가 해당 프린터 모델에 호환되는지 확인하세요<br>3. 정착기 오류 발생 시 전원을 끄고 제조사 A/S센터 문의<br>⚠️ 정착기 수리는 반드시 제조사 A/S</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">폐토너통</span><span class="err-name">폐토너통 교체 알림</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">1. 프린터 커버를 열고 폐토너통을 분리하세요<br>2. 새 폐토너통으로 교체 후 딸깍 소리 나게 장착하세요<br>→ 재생 폐토너통 구매 문의: 010-3292-7896</div>
+      </div>
+      <button class="btn-cta" onclick="sendChip('문제 해결이 안 돼요. 상담원 연결해주세요'); switchTab('chat')">해결 안 될 경우 상담원 연결 ↗</button>
+    </div>
+  </div>
+
+  <div id="footer">토너를 부탁해 · 재생 토너·잉크 전문 판매 · 📞 010-3292-7896</div>
+</div>
+
+<script>
+  const hist = [];
+  let busy = false;
+
+  function scrollDown() { const m = document.getElementById('messages'); m.scrollTop = m.scrollHeight; }
+
+  function addMsg(role, text) {
+    const c = document.getElementById('messages');
+    const d = document.createElement('div');
+    d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+    const av = document.createElement('div');
+    av.className = 'av ' + (role === 'user' ? 'user-av' : 'bot-av');
+    av.textContent = role === 'user' ? '나' : 'AI';
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    if (role === 'bot' && text.includes('010-3292-7896')) {
+      const cleaned = text.replace(/📞[^\n]*010-3292-7896[^\n]*/g, '').trim();
+      if (cleaned) b.appendChild(document.createTextNode(cleaned + '\n\n'));
+      const card = document.createElement('div');
+      card.className = 'contact-card';
+      card.innerHTML = '<strong>📞 토너를 부탁해 고객센터</strong><br><a href="tel:01032927896">010-3292-7896</a><br>전화 또는 문자로 연락 주시면 빠르게 도와드립니다 😊';
+      b.appendChild(card);
+    } else {
+      b.textContent = text;
+    }
+    d.appendChild(av); d.appendChild(b);
+    c.appendChild(d); scrollDown();
+  }
+
+  async function callAPI(text) {
+    hist.push({ role: 'user', content: text });
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: hist })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    hist.push({ role: 'assistant', content: data.reply });
+    return data.reply;
+  }
+
+  async function handleSend() {
+    if (busy) return;
+    const inp = document.getElementById('user-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = ''; inp.style.height = 'auto';
+    busy = true; document.getElementById('send-btn').disabled = true;
+    switchTab('chat');
+    addMsg('user', text);
+    document.getElementById('typing').style.display = 'flex'; scrollDown();
+    try {
+      const reply = await callAPI(text);
+      document.getElementById('typing').style.display = 'none';
+      addMsg('bot', reply);
+    } catch (e) {
+      document.getElementById('typing').style.display = 'none';
+      addMsg('bot', '일시적인 오류가 발생했어요.\n\n토너·잉크 관련 문의는 아래로 연락 주세요.\n📞 토너를 부탁해: 010-3292-7896');
+    }
+    busy = false; document.getElementById('send-btn').disabled = false;
+  }
+
+  function sendChip(t) { if (busy) return; document.getElementById('user-input').value = t; handleSend(); }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['chat', 'db', 'err'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  function toggleErr(el) { el.classList.toggle('open'); }
+
+  document.getElementById('user-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  document.getElementById('user-input').addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+  });
+</script>
+</body>
+</html>
