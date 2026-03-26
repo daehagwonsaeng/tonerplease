@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KGHITECH BOT - 재생 잉크·토너 전문 도우미</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    #app {
+      display: flex; flex-direction: column;
+      width: 100%; max-width: 480px; height: 700px;
+      background: #ffffff; border-radius: 16px; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(4,44,83,0.15);
+    }
+    #hdr {
+      background: #042C53; padding: 14px 18px;
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    #hdr-icon {
+      width: 38px; height: 38px; background: #0C447C;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    }
+    #hdr-icon svg { width: 22px; height: 22px; }
+    #hdr-info { flex: 1; }
+    #hdr-title { font-size: 15px; font-weight: 600; color: #E6F1FB; letter-spacing: 0.03em; }
+    #hdr-sub { font-size: 11px; color: #85B7EB; margin-top: 2px; }
+    #hdr-badge {
+      font-size: 11px; background: #0C447C; color: #85B7EB;
+      padding: 3px 10px; border-radius: 20px; border: 1px solid #185FA5;
+    }
+    #tabs {
+      display: flex; border-bottom: 1px solid #e8edf2;
+      background: #f7f9fc; flex-shrink: 0;
+    }
+    .tab {
+      flex: 1; padding: 10px 4px; font-size: 12px; text-align: center;
+      cursor: pointer; color: #7a8a9a; border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; background: #fff; }
+    .tab:hover:not(.active) { background: #fff; color: #333; }
+    .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .panel.active { display: flex; }
+    #messages {
+      flex: 1; overflow-y: auto; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 4px; }
+    .msg { display: flex; gap: 8px; }
+    .msg.user { flex-direction: row-reverse; }
+    .bubble {
+      max-width: 82%; font-size: 13.5px; line-height: 1.7;
+      padding: 10px 14px; border-radius: 14px; white-space: pre-wrap;
+    }
+    .msg.bot .bubble {
+      background: #f3f6fa; color: #1a2a3a;
+      border-radius: 4px 14px 14px 14px; border: 1px solid #e2eaf2;
+    }
+    .msg.user .bubble {
+      background: #042C53; color: #B5D4F4;
+      border-radius: 14px 4px 14px 14px;
+    }
+    .contact-card {
+      margin-top: 10px; background: #EBF4FF;
+      border: 1px solid #378ADD; border-radius: 10px;
+      padding: 11px 14px; font-size: 13px; color: #042C53; line-height: 1.9;
+    }
+    .contact-card strong { font-weight: 600; }
+    .contact-card a { color: #185FA5; font-weight: 600; text-decoration: none; }
+    .av {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600; flex-shrink: 0; margin-top: 3px;
+    }
+    .bot-av { background: #0C447C; color: #85B7EB; }
+    .user-av { background: #042C53; color: #85B7EB; }
+    #typing { display: none; gap: 8px; }
+    .dot {
+      width: 6px; height: 6px; background: #aab; border-radius: 50%;
+      animation: blink 1.2s infinite; display: inline-block; margin: 0 1px;
+    }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,60%,100%{opacity:.3} 30%{opacity:1} }
+    #chips {
+      padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap;
+      border-bottom: 1px solid #e8edf2; background: #fff; flex-shrink: 0;
+    }
+    .chip {
+      font-size: 12px; padding: 5px 11px;
+      border: 1px solid #d0dce8; border-radius: 20px;
+      cursor: pointer; color: #5a6a7a; background: #f7f9fc;
+      transition: all .15s; white-space: nowrap;
+    }
+    .chip:hover { background: #EBF4FF; color: #185FA5; border-color: #185FA5; }
+    #inp-area {
+      padding: 10px 16px; border-top: 1px solid #e8edf2;
+      display: flex; gap: 8px; align-items: flex-end;
+      background: #fff; flex-shrink: 0;
+    }
+    #user-input {
+      flex: 1; resize: none; font-family: inherit; font-size: 13.5px;
+      padding: 9px 12px; border: 1px solid #d0dce8; border-radius: 10px;
+      background: #f7f9fc; color: #1a2a3a; outline: none;
+      line-height: 1.5; max-height: 90px; overflow-y: auto;
+    }
+    #user-input:focus { border-color: #378ADD; background: #fff; }
+    #send-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #042C53; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    #send-btn:hover { background: #0C447C; }
+    #send-btn:disabled { background: #c5d0dc; cursor: not-allowed; }
+    #send-btn svg { width: 15px; height: 15px; }
+    .scroll-panel { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .info-card { background: #fff; border: 1px solid #e2eaf2; border-radius: 12px; padding: 13px 15px; }
+    .card-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #1a2a3a; }
+    .card-sub { font-size: 11px; color: #8a9aaa; margin-left: auto; }
+    .ink-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .ink-label { font-size: 12px; color: #6a7a8a; width: 50px; flex-shrink: 0; }
+    .ink-bar-bg { flex: 1; height: 8px; background: #eef2f6; border-radius: 20px; overflow: hidden; border: 1px solid #e2eaf2; }
+    .ink-bar { height: 100%; border-radius: 20px; }
+    .ink-pct { font-size: 12px; font-weight: 600; width: 32px; text-align: right; }
+    .alert-box { font-size: 12.5px; padding: 9px 11px; border-radius: 8px; border: 1px solid; margin-top: 6px; }
+    .alert-warn { background: #FFF8ED; color: #7a4a00; border-color: #f0b840; }
+    .alert-ok { background: #F0F9EC; color: #2a6020; border-color: #72c040; }
+    .err-hint { font-size: 12px; color: #8a9aaa; padding-bottom: 4px; }
+    .err-item {
+      background: #fff; border: 1px solid #e2eaf2;
+      border-radius: 12px; padding: 12px 14px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .err-item:hover { border-color: #378ADD; }
+    .err-top { display: flex; align-items: center; gap: 8px; }
+    .err-code { font-size: 11.5px; font-weight: 600; color: #185FA5; background: #EBF4FF; padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+    .err-name { font-size: 13px; color: #1a2a3a; }
+    .err-sev { font-size: 11px; margin-left: auto; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .sev-high { background: #FDECEA; color: #b02020; }
+    .sev-mid { background: #FFF3E0; color: #a05000; }
+    .err-desc { font-size: 12.5px; color: #5a6a7a; margin-top: 8px; display: none; line-height: 1.7; }
+    .err-item.open .err-desc { display: block; }
+    .btn-contact {
+      width: 100%; padding: 10px; font-size: 13px; font-family: inherit;
+      background: #042C53; color: #B5D4F4; border: none;
+      border-radius: 10px; cursor: pointer; margin-top: 4px; transition: background .15s;
+    }
+    .btn-contact:hover { background: #0C447C; }
+    #footer {
+      text-align: center; padding: 8px; font-size: 11px; color: #aab;
+      background: #f7f9fc; border-top: 1px solid #e8edf2; flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="hdr">
+    <div id="hdr-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#85B7EB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+    </div>
+    <div id="hdr-info">
+      <div id="hdr-title">KGHITECH BOT</div>
+      <div id="hdr-sub">재생 잉크·토너 전문 도우미</div>
+    </div>
+    <div id="hdr-badge">AI 지원</div>
+  </div>
+
+  <div id="tabs">
+    <div class="tab active" onclick="switchTab('chat')">💬 AI 상담</div>
+    <div class="tab" onclick="switchTab('parts')">🔧 부품 안내</div>
+    <div class="tab" onclick="switchTab('err')">⚠️ 오류 유형</div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div id="panel-chat" class="panel active">
+    <div id="chips">
+      <div class="chip" onclick="sendChip('토너 인식이 안 돼요')">인식 안됨</div>
+      <div class="chip" onclick="sendChip('이미징유닛 오류가 떠요')">이미징유닛</div>
+      <div class="chip" onclick="sendChip('전사벨트 관련 오류가 있어요')">전사벨트</div>
+      <div class="chip" onclick="sendChip('인쇄물이 흐리게 나와요')">흐린 인쇄</div>
+      <div class="chip" onclick="sendChip('폐토너통 교체 방법 알려주세요')">폐토너통</div>
+    </div>
+    <div id="messages">
+      <div class="msg bot">
+        <div class="av bot-av">AI</div>
+        <div class="bubble">안녕하세요! 재생 잉크·토너 전문 도우미 KGHITECH BOT입니다 🖨️
+
+정확한 도움을 드리기 위해 두 가지를 여쭤볼게요!
+
+1. 사용 중인 프린터 모델명이 어떻게 되나요?
+   (예: HP LaserJet M1132, Canon LBP6030 등)
+
+2. 현재 어떤 문제가 발생하고 있나요?
+   (예: 토너 인식 안됨, 이미징유닛 오류, 전사벨트 문제, 인쇄 흐림 등)
+
+알려주시면 바로 도와드릴게요 😊</div>
+      </div>
+    </div>
+    <div id="typing" class="msg bot">
+      <div class="av bot-av">AI</div>
+      <div class="bubble"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div id="inp-area">
+      <textarea id="user-input" placeholder="프린터 모델명과 증상을 알려주세요..." rows="1"></textarea>
+      <button id="send-btn" onclick="handleSend()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Parts Panel -->
+  <div id="panel-parts" class="panel">
+    <div class="scroll-panel">
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">🥁</span><span class="card-title">드럼 (OPC Drum)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">레이저로 정전기 이미지를 형성해 토너를 흡착하는 감광체입니다.<br><strong style="color:#1a2a3a">주의:</strong> 빛·직사광선·손 접촉 시 감광층 손상<br><strong style="color:#1a2a3a">오류 증상:</strong> 세로 줄무늬, 반복 얼룩, 농도 불균일</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">📦</span><span class="card-title">이미징유닛 (Imaging Unit)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">드럼 + 현상기가 일체형으로 결합된 부품 (Brother, OKI 등 사용).<br><strong style="color:#1a2a3a">주의:</strong> 탈착 시 빛 차단 필수, 토너와 별도 교체<br><strong style="color:#1a2a3a">오류 증상:</strong> "이미징유닛 교체" 메시지, 인쇄 품질 저하</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">🔄</span><span class="card-title">전사벨트 (ITB)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">컬러 프린터에서 CMYK 4색 토너를 용지로 전사하는 벨트입니다.<br><strong style="color:#1a2a3a">주의:</strong> 벨트 표면 손상 시 컬러 정합 불량 발생<br><strong style="color:#1a2a3a">오류 증상:</strong> 컬러 번짐, 가로 줄무늬, 색상 어긋남</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">🌡️</span><span class="card-title">정착기 / 퓨저 (Fuser)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">열(170~220°C)과 압력으로 토너를 용지에 영구 고정합니다.<br><strong style="color:#1a2a3a">주의:</strong> 내부 고온 — 절대 직접 분해 금지<br><strong style="color:#1a2a3a">오류 증상:</strong> 인쇄물 번짐, 손에 토너 묻음, 정착기 오류 코드</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">⚙️</span><span class="card-title">현상롤러 (Developer Roller)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">토너 카트리지 내부에서 드럼에 토너를 자기력으로 공급합니다.<br><strong style="color:#1a2a3a">오류 증상:</strong> 일정 간격 반복 줄무늬, 인쇄 농도 저하<br><strong style="color:#1a2a3a">해결:</strong> 롤러 표면 마른 천으로 닦기 → 개선 없으면 토너 교체</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">🗑️</span><span class="card-title">폐토너통 (Waste Toner Box)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">클리닝 후 수거된 잔류 토너를 모아두는 용기입니다.<br><strong style="color:#1a2a3a">오류 증상:</strong> "폐토너통 가득 참" 메시지, 인쇄 중단<br><strong style="color:#1a2a3a">해결:</strong> 탈착 시 토너 흘리지 않게 주의하며 교체</div>
+      </div>
+      <div class="info-card">
+        <div class="card-hdr"><span style="font-size:17px">📋</span><span class="card-title">토너 칩 (Toner Chip)</span></div>
+        <div style="font-size:12.5px;color:#5a6a7a;line-height:1.8">토너 잔량 및 정품 여부를 프린터에 전달하는 IC 칩입니다.<br><strong style="color:#1a2a3a">재생 특이사항:</strong> 칩 리셋 또는 신규 칩 장착 필수<br><strong style="color:#1a2a3a">오류 증상:</strong> "토너 없음", "비정품 토너" 경고</div>
+      </div>
+      <button class="btn-contact" onclick="sendChip('부품 교체가 필요할 것 같아요'); switchTab('chat')">부품 관련 AI에게 묻기 ↗</button>
+    </div>
+  </div>
+
+  <!-- Error Panel -->
+  <div id="panel-err" class="panel">
+    <div class="scroll-panel">
+      <div class="err-hint">항목을 눌러 해결 방법을 확인하세요</div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">토너 칩</span><span class="err-name">재생 토너 미인식</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">재생 토너 칩 인식 문제입니다.<br>1. 토너를 꺼내 칩 단자를 마른 천으로 닦아주세요<br>2. 프린터 전원을 껐다 다시 켜세요<br>3. 해결 안 될 경우 칩 불량 가능 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">이미징유닛</span><span class="err-name">이미징유닛 오류·교체 알림</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">드럼+현상기 일체형 부품 문제입니다.<br>1. 유닛 탈착 시 빛에 노출되지 않도록 주의하세요<br>2. 재장착 후 전원 재시작 및 카운터 리셋<br>3. 수명 초과 시 교체 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">전사벨트</span><span class="err-name">전사벨트(ITB) 오류·색 어긋남</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">컬러 전사 벨트 관련 문제입니다.<br>1. 벨트 표면 토너 오염·스크래치 여부를 확인하세요<br>2. 전사롤러 접촉 상태를 점검하세요<br>3. 벨트 손상 시 교체 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">드럼</span><span class="err-name">드럼 오염·줄무늬</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">드럼 감광체 손상 또는 오염입니다.<br>1. 드럼 표면을 절대 손으로 만지지 마세요<br>2. 직사광선 노출 금지<br>3. 반복 줄무늬 지속 시 드럼 또는 이미징유닛 교체</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">정착기</span><span class="err-name">인쇄물 번짐·손에 묻음</span><span class="err-sev sev-high">긴급</span></div>
+        <div class="err-desc">정착기(퓨저) 온도 또는 호환 문제입니다.<br>1. 프린터 설정에서 용지 종류를 확인하세요<br>2. 정착기 오류 코드 발생 시 즉시 전원을 끄세요<br>3. 정착기 분해는 위험 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">현상롤러</span><span class="err-name">반복 얼룩·인쇄 농도 저하</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">현상롤러 오염이 원인입니다.<br>1. 토너를 꺼내 롤러 표면을 마른 천으로 가볍게 닦아주세요<br>2. 토너를 좌우로 흔들어 재장착하세요<br>3. 개선 없을 시 토너 교체 또는 KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">폐토너통</span><span class="err-name">폐토너통 교체 알림</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">폐토너 수거함이 가득 찬 상태입니다.<br>1. 프린터 커버를 열고 폐토너통을 분리하세요<br>2. 새 폐토너통으로 교체 후 딸깍 소리 나게 장착하세요<br>3. 재생 폐토너통 구매 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <div class="err-item" onclick="toggleErr(this)">
+        <div class="err-top"><span class="err-code">급지롤러</span><span class="err-name">용지 걸림·급지 불량</span><span class="err-sev sev-mid">주의</span></div>
+        <div class="err-desc">급지롤러 마모 또는 용지 상태 문제입니다.<br>1. 전원을 끄고 걸린 용지를 천천히 제거하세요<br>2. 용지함 용지를 가지런히 정렬해 다시 넣으세요<br>3. 반복 발생 시 급지롤러 교체 → KGHITECH(010-3292-7896) 문의</div>
+      </div>
+      <button class="btn-contact" onclick="sendChip('해결이 안 돼요. 상담원 연결이 필요해요'); switchTab('chat')">해결 안 될 경우 상담원 연결 ↗</button>
+    </div>
+  </div>
+
+  <div id="footer">KGHITECH BOT · 재생 잉크·토너 전문 · 📞 010-3292-7896</div>
+</div>
+
+<script>
+const SYSTEM = `당신은 재생 잉크·토너 전문 도우미 KGHITECH BOT입니다.
+KGHITECH는 재생 잉크·토너만을 전문으로 취급하는 업체입니다 (정품 아님).
+
+===== 프린터 핵심 부품 지식 =====
+
+[드럼 (OPC Drum)]
+- 역할: 레이저로 정전기 이미지를 형성하고 토너를 흡착시키는 핵심 감광체
+- 특징: 빛(자외선, 직사광선)에 매우 민감. 손으로 만지거나 빛에 노출되면 감광층 손상
+- 재생 관련: 재생 토너 사용 시 드럼 수명이 정품 대비 영향을 받을 수 있음
+- 오류 증상: 세로 줄무늬, 얼룩, 인쇄 농도 불균일, 반복 패턴 오염
+- 해결: 빛 차단 후 재장착, 드럼 표면 오염 시 교체 권장
+
+[이미징유닛 (Imaging Unit / IU)]
+- 역할: 드럼 + 현상기(현상롤러 포함)가 일체형으로 결합된 부품. 주로 Brother, Konica Minolta, OKI 등에서 사용
+- 특징: 토너와 별도로 교체. 수명은 보통 토너보다 훨씬 길며 인쇄 페이지 수로 관리
+- 재생 관련: 재생 토너 사용 시 이미징유닛 수명 카운터 초기화 필요한 경우 있음
+- 오류 증상: "이미징유닛 교체" 메시지, 인쇄 품질 저하, 드럼 오염 패턴
+- 해결: 유닛 탈착 시 빛 차단 필수, 재장착 후 카운터 리셋, 수명 초과 시 교체
+
+[전사벨트 (Transfer Belt / ITB - Intermediate Transfer Belt)]
+- 역할: 컬러 레이저 프린터에서 CMYK 4색 토너 이미지를 순차적으로 받아 한 번에 용지로 전사
+- 특징: 컬러 프린터 전용 부품. 벨트 표면 손상 시 컬러 정합 불량 발생
+- 재생 관련: 재생 토너의 입자 특성에 따라 벨트 오염 가능성 있음
+- 오류 증상: 컬러 번짐, 가로 줄무늬, 색상 어긋남(컬러 미스레지스트), "벨트 교체" 메시지
+- 해결: 벨트 표면 오염 확인, 전사롤러 접촉 상태 점검, 손상 시 교체
+
+[전사롤러 (Transfer Roller)]
+- 역할: 드럼 또는 전사벨트의 토너 이미지를 용지로 옮기는 롤러
+- 오류 증상: 인쇄 농도 불균일, 용지 뒷면 오염, 흐린 인쇄
+- 해결: 롤러 오염 확인, 마모 시 교체
+
+[정착기 / 퓨저 (Fuser / Fixing Unit)]
+- 역할: 열(170~220°C)과 압력으로 토너를 용지에 영구 고정
+- 특징: 내부 온도가 매우 높으므로 분해 시 화상 위험. 절대 직접 분해하지 말 것
+- 재생 관련: 재생 토너 입자 크기에 따라 정착 온도 적합성 다를 수 있음
+- 오류 증상: 인쇄물 번짐, 손에 토너 묻음, "정착기 오류" 코드, 용지 구겨짐
+- 해결: 용지 설정 확인(두꺼운 용지는 온도 높게), 정착기 오류 시 전원 끄고 전문가 의뢰
+
+[현상롤러 (Developer Roller / Magnetic Roller)]
+- 역할: 토너 카트리지 내부에서 드럼에 토너를 자기력으로 공급하는 롤러
+- 오류 증상: 특정 간격으로 반복되는 세로 줄무늬, 얼룩, 인쇄 농도 저하
+- 해결: 토너 카트리지 흔들기, 롤러 표면 마른 천으로 닦기, 개선 없으면 토너 교체
+
+[클리닝 블레이드 (Cleaning Blade)]
+- 역할: 드럼 또는 전사벨트 표면의 잔류 토너를 긁어내는 고무 블레이드
+- 오류 증상: 잔상(고스팅), 배경 오염, 회색 배경
+- 해결: 클리닝 페이지 출력, 반복 시 드럼 또는 이미징유닛 교체
+
+[폐토너통 (Waste Toner Container / Box)]
+- 역할: 클리닝 후 수거된 폐토너를 모아두는 용기
+- 오류 증상: "폐토너통 가득 참" 메시지, 인쇄 중단
+- 해결: 폐토너통 교체 (탈착 시 토너 흘리지 않도록 주의)
+
+[급지롤러 / 픽업롤러 (Pick-up Roller / Feed Roller)]
+- 역할: 용지함에서 용지를 한 장씩 집어 올리는 롤러
+- 오류 증상: 용지 걸림, 복수 급지(여러 장 한 번에), 급지 불량
+- 해결: 롤러 표면 이소프로필알코올로 닦기, 마모 심하면 교체
+
+[토너 칩 (Toner Chip)]
+- 역할: 토너 잔량 및 정품 여부를 프린터에 전달하는 IC 칩
+- 재생 관련: 재생 토너는 칩 리셋 또는 신규 칩 장착 필수. 칩 불량 시 인식 오류 발생
+- 오류 증상: "토너 없음", "토너 미인식", "비정품 토너" 경고
+- 해결: 칩 단자 닦기, 재장착, 칩 교체
+
+===== 재생 토너·잉크 관련 주요 이슈 =====
+- 칩 인식 오류: 단자 닦기 → 재장착 → 전원 재시작 → 해결 안 되면 칩 교체
+- 이미징유닛 오류: 빛 차단 후 재장착 → 카운터 리셋 → 수명 초과 시 교체
+- 전사벨트 문제: 표면 오염 확인 → 전사롤러 점검 → 손상 시 교체
+- 흐린 인쇄: 토너 흔들기 → 농도 설정 높이기 → 드럼/현상롤러 확인
+- 정착 불량(번짐): 용지 설정 확인 → 전원 끄고 전문가 의뢰
+- 줄무늬·얼룩: 드럼/현상롤러 오염 여부 확인 → 클리닝 → 교체
+- 폐토너통: 교체 단계별 안내
+- 용지 걸림: 급지롤러 상태 확인
+
+===== 대화 흐름 =====
+1. 프린터 모델명을 파악하세요
+2. 구매한 재생 토너·잉크 제품명(있다면)을 파악하세요
+3. 발생 중인 오류/증상을 파악하세요
+4. 위 부품 지식을 바탕으로 원인과 해결책을 안내하세요
+5. 구매처는 절대 먼저 묻지 마세요
+
+===== 답변 불가 시 처리 (매우 중요) =====
+AI가 해결하지 못하거나 사용자가 추가 도움을 요청하면 반드시 아래 형식으로 안내하세요:
+
+"죄송합니다, 해당 문제는 상담원의 직접 도움이 필요할 것 같습니다.
+📞 KGHITECH 고객센터: 010-3292-7896
+전화 또는 문자로 연락 주시면 빠르게 도와드리겠습니다 😊"
+
+===== 응답 규칙 =====
+- 한국어로 친절하고 쉽게 설명하세요
+- 부품 이름은 한국어와 영어를 함께 표기하세요 (예: 전사벨트(ITB))
+- 단계별 번호로 안내하세요
+- 재생 토너·잉크 특성에 맞게 설명하세요
+- 답변은 300자 이내로 간결하게 유지하세요
+- 정착기 분해 등 위험한 작업은 반드시 전문가 의뢰를 권하세요`;
+
+  const hist = [];
+  let busy = false;
+
+  function scrollDown() {
+    const m = document.getElementById('messages');
+    m.scrollTop = m.scrollHeight;
+  }
+
+  function addMsg(role, text) {
+    const c = document.getElementById('messages');
+    const d = document.createElement('div');
+    d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+    const av = document.createElement('div');
+    av.className = 'av ' + (role === 'user' ? 'user-av' : 'bot-av');
+    av.textContent = role === 'user' ? '나' : 'AI';
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    if (role === 'bot' && text.includes('010-3292-7896')) {
+      const cleaned = text.replace(/📞[^\n]*010-3292-7896[^\n]*/g, '').trim();
+      if (cleaned) b.appendChild(document.createTextNode(cleaned + '\n\n'));
+      const card = document.createElement('div');
+      card.className = 'contact-card';
+      card.innerHTML = '<strong>📞 KGHITECH 고객센터</strong><br><a href="tel:01032927896">010-3292-7896</a><br>전화 또는 문자로 연락 주시면 빠르게 도와드립니다 😊';
+      b.appendChild(card);
+    } else {
+      b.textContent = text;
+    }
+    d.appendChild(av);
+    d.appendChild(b);
+    c.appendChild(d);
+    scrollDown();
+  }
+
+  async function callAPI(text) {
+    hist.push({ role: 'user', content: text });
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM,
+        messages: hist
+      })
+    });
+    const data = await r.json();
+    const reply = data.content.map(b => b.text || '').join('');
+    hist.push({ role: 'assistant', content: reply });
+    return reply;
+  }
+
+  async function handleSend() {
+    if (busy) return;
+    const inp = document.getElementById('user-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    inp.style.height = 'auto';
+    busy = true;
+    document.getElementById('send-btn').disabled = true;
+    switchTab('chat');
+    addMsg('user', text);
+    document.getElementById('typing').style.display = 'flex';
+    scrollDown();
+    try {
+      const reply = await callAPI(text);
+      document.getElementById('typing').style.display = 'none';
+      addMsg('bot', reply);
+    } catch (e) {
+      document.getElementById('typing').style.display = 'none';
+      addMsg('bot', '일시적인 오류가 발생했어요.\n\n죄송합니다, 상담원에게 직접 문의해 주세요.\n📞 KGHITECH 고객센터: 010-3292-7896\n전화 또는 문자로 연락 주시면 빠르게 도와드립니다 😊');
+    }
+    busy = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+
+  function sendChip(t) {
+    if (busy) return;
+    document.getElementById('user-input').value = t;
+    handleSend();
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['chat', 'parts', 'err'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  function toggleErr(el) { el.classList.toggle('open'); }
+
+  document.getElementById('user-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  document.getElementById('user-input').addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+  });
+</script>
+</body>
+</html>
